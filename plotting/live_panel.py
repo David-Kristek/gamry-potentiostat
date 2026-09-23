@@ -40,12 +40,15 @@ from potentiostat.core.workflow.emitter import TechniqueProgressEvent, WorkflowE
 def get_default_axes() -> Tuple[dict[str, list[Axes]], Figure]:
     fig = plt.figure(figsize=(13, 7))
     gs = fig.add_gridspec(2, 3, hspace=0.4, wspace=0.35)
-    return ({
-        "ocp": [fig.add_subplot(gs[0, 0])],
-        "lpr": [fig.add_subplot(gs[0, 1])],
-        "cpp": [fig.add_subplot(gs[0, 2])],
-        "eis": [fig.add_subplot(gs[1, 0]), fig.add_subplot(gs[1, 1:])],
-    }, fig)
+    return (
+        {
+            "ocp": [fig.add_subplot(gs[0, 0])],
+            "lpr": [fig.add_subplot(gs[0, 1])],
+            "cpp": [fig.add_subplot(gs[0, 2])],
+            "eis": [fig.add_subplot(gs[1, 0]), fig.add_subplot(gs[1, 1:])],
+        },
+        fig,
+    )
 
 
 class LivePanel:
@@ -92,9 +95,7 @@ class LivePanel:
                 plotter.update_lines(self.lines[event.key], event.data)
 
         # kept on self -- an unreferenced FuncAnimation is GC'd and stops ticking
-        self._animation = FuncAnimation(
-            self.fig, self._redraw, interval=redraw_interval_ms, cache_frame_data=False
-        )
+        self._animation = FuncAnimation(self.fig, self._redraw, interval=redraw_interval_ms, cache_frame_data=False)
 
         if run_future is not None:
             # a failure before the first TechniqueStartEvent (bad env,

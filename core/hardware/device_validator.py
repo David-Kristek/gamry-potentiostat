@@ -9,9 +9,7 @@ the physical capabilities of the connected potentiostat.
 """
 
 import warnings
-from typing import Dict, Any, List, Optional, Tuple
-import math
-import json
+from typing import Dict, Any, List, Tuple
 
 from potentiostat.parsing.sequence_config import SequenceConfig
 
@@ -19,13 +17,13 @@ from potentiostat.parsing.sequence_config import SequenceConfig
 MODEL_SPECS: Dict[str, Dict[str, Any]] = {
     "REFERENCE 600+": {
         "name": "Gamry Reference 600+",
-        "max_current_a": 0.600,       # ±600 mA
-        "min_current_a": 60e-15,      # 60 fA resolution
-        "max_voltage_v": 11.0,        # ±11 V compliance
-        "freq_min_hz": 10e-6,         # 10 µHz
-        "freq_max_hz": 5e6,           # 5 MHz
-        "max_scan_rate_v_s": 100.0,   # 100 V/s
-        "min_sample_period_s": 10e-6, # 10 µs
+        "max_current_a": 0.600,  # ±600 mA
+        "min_current_a": 60e-15,  # 60 fA resolution
+        "max_voltage_v": 11.0,  # ±11 V compliance
+        "freq_min_hz": 10e-6,  # 10 µHz
+        "freq_max_hz": 5e6,  # 5 MHz
+        "max_scan_rate_v_s": 100.0,  # 100 V/s
+        "min_sample_period_s": 10e-6,  # 10 µs
     },
     "REFERENCE 600": {
         "name": "Gamry Reference 600",
@@ -33,17 +31,17 @@ MODEL_SPECS: Dict[str, Dict[str, Any]] = {
         "min_current_a": 60e-15,
         "max_voltage_v": 11.0,
         "freq_min_hz": 10e-6,
-        "freq_max_hz": 1e6,           # 1 MHz
+        "freq_max_hz": 1e6,  # 1 MHz
         "max_scan_rate_v_s": 100.0,
         "min_sample_period_s": 10e-6,
     },
     "INTERFACE 1000": {
         "name": "Gamry Interface 1000",
-        "max_current_a": 1.000,       # ±1.0 A
+        "max_current_a": 1.000,  # ±1.0 A
         "min_current_a": 300e-15,
-        "max_voltage_v": 12.0,        # ±12 V
+        "max_voltage_v": 12.0,  # ±12 V
         "freq_min_hz": 10e-6,
-        "freq_max_hz": 1e6,           # 1 MHz
+        "freq_max_hz": 1e6,  # 1 MHz
         "max_scan_rate_v_s": 100.0,
         "min_sample_period_s": 10e-6,
     },
@@ -51,27 +49,27 @@ MODEL_SPECS: Dict[str, Dict[str, Any]] = {
         "name": "Gamry Interface 1010",
         "max_current_a": 1.000,
         "min_current_a": 300e-15,
-        "max_voltage_v": 12.0,        # ±12 V
+        "max_voltage_v": 12.0,  # ±12 V
         "freq_min_hz": 10e-6,
-        "freq_max_hz": 2e6,           # 2 MHz
+        "freq_max_hz": 2e6,  # 2 MHz
         "max_scan_rate_v_s": 100.0,
         "min_sample_period_s": 10e-6,
     },
     "INTERFACE 5000": {
         "name": "Gamry Interface 5000",
-        "max_current_a": 5.000,       # ±5.0 A
+        "max_current_a": 5.000,  # ±5.0 A
         "min_current_a": 1e-12,
-        "max_voltage_v": 6.0,         # ±6 V
+        "max_voltage_v": 6.0,  # ±6 V
         "freq_min_hz": 10e-6,
-        "freq_max_hz": 1e6,           # 1 MHz
+        "freq_max_hz": 1e6,  # 1 MHz
         "max_scan_rate_v_s": 100.0,
         "min_sample_period_s": 10e-6,
     },
     "REFERENCE 3000": {
         "name": "Gamry Reference 3000",
-        "max_current_a": 3.000,       # ±3.0 A
+        "max_current_a": 3.000,  # ±3.0 A
         "min_current_a": 300e-15,
-        "max_voltage_v": 32.0,        # ±32 V
+        "max_voltage_v": 32.0,  # ±32 V
         "freq_min_hz": 10e-6,
         "freq_max_hz": 1e6,
         "max_scan_rate_v_s": 100.0,
@@ -86,7 +84,7 @@ MODEL_SPECS: Dict[str, Dict[str, Any]] = {
         "freq_max_hz": 1e6,
         "max_scan_rate_v_s": 50.0,
         "min_sample_period_s": 1e-4,
-    }
+    },
 }
 
 
@@ -98,7 +96,7 @@ def get_pstat_info(pstat: Any) -> Dict[str, Any]:
     label = "Unknown Pstat"
     serial_no = "Unknown S/N"
     model_no = "600"
-    
+
     if pstat is not None:
         for label_attr in ["label", "Label", "Section", "section"]:
             if hasattr(pstat, label_attr):
@@ -108,7 +106,7 @@ def get_pstat_info(pstat: Any) -> Dict[str, Any]:
                     break
                 except Exception:
                     pass
-                    
+
         for sn_attr in ["serial_no", "SerialNo"]:
             if hasattr(pstat, sn_attr):
                 try:
@@ -117,7 +115,7 @@ def get_pstat_info(pstat: Any) -> Dict[str, Any]:
                     break
                 except Exception:
                     pass
-                    
+
         for model_attr in ["model_no", "ModelNo"]:
             if hasattr(pstat, model_attr):
                 try:
@@ -133,7 +131,7 @@ def get_pstat_info(pstat: Any) -> Dict[str, Any]:
         if k in model_key or model_no in k:
             specs = v.copy()
             break
-            
+
     if specs is None:
         specs = MODEL_SPECS["GENERIC"].copy()
         specs["name"] = f"Gamry Pstat (Model {model_no})"
@@ -172,7 +170,9 @@ def validate_device_parameters(pstat: Any, config: SequenceConfig, raise_on_erro
     sample_time = config.ocp.sample_time_s
     min_sp = specs["min_sample_period_s"]
     if sample_time < min_sp:
-        mismatches.append(f"[OCP] sample_time_s ({sample_time}s) is smaller than {model_name} minimum sampling period ({min_sp}s).")
+        mismatches.append(
+            f"[OCP] sample_time_s ({sample_time}s) is smaller than {model_name} minimum sampling period ({min_sp}s)."
+        )
 
     # 2. Check EIS parameters
     eis = config.eis
@@ -182,16 +182,22 @@ def validate_device_parameters(pstat: Any, config: SequenceConfig, raise_on_erro
     freq_max = specs["freq_max_hz"]
 
     if init_freq > freq_max or init_freq < freq_min:
-        mismatches.append(f"[EIS] initial_freq_hz ({init_freq:,.0f} Hz) is outside {model_name} frequency range ({freq_min} - {freq_max:,.0f} Hz).")
+        mismatches.append(
+            f"[EIS] initial_freq_hz ({init_freq:,.0f} Hz) is outside {model_name} frequency range ({freq_min} - {freq_max:,.0f} Hz)."
+        )
 
     if final_freq > freq_max or final_freq < freq_min:
-        mismatches.append(f"[EIS] final_freq_hz ({final_freq:,.0f} Hz) is outside {model_name} frequency range ({freq_min} - {freq_max:,.0f} Hz).")
+        mismatches.append(
+            f"[EIS] final_freq_hz ({final_freq:,.0f} Hz) is outside {model_name} frequency range ({freq_min} - {freq_max:,.0f} Hz)."
+        )
 
     ac_v = eis.ac_voltage_v
     dc_v = eis.dc_voltage_v
     max_v = specs["max_voltage_v"]
     if (abs(dc_v) + abs(ac_v)) > max_v:
-        mismatches.append(f"[EIS] Combined excitation voltage (DC {dc_v}V + AC {ac_v}V) exceeds {model_name} compliance limit (±{max_v} V).")
+        mismatches.append(
+            f"[EIS] Combined excitation voltage (DC {dc_v}V + AC {ac_v}V) exceeds {model_name} compliance limit (±{max_v} V)."
+        )
 
     # 3. Check LPR parameters
     scan_rate = config.lpr.scan_rate_v_s
@@ -229,6 +235,7 @@ def validate_device_parameters(pstat: Any, config: SequenceConfig, raise_on_erro
 def audit_and_clamp_config(pstat: Any, config: SequenceConfig) -> Tuple[SequenceConfig, List[str]]:
     mismatches = validate_device_parameters(pstat, config, raise_on_error=False)
     return config, mismatches
+
 
 def print_audit_summary(pstat_specs: Dict[str, Any], audit_report: Any) -> None:
     pass

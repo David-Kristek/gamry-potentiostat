@@ -178,7 +178,9 @@ class CPP(Technique[CPPConfig]):
             if not stopped:
                 v_reversal = float(raw_fwd["vf"][-1]) if len(raw_fwd) else v_apex
                 curve_rev = ctx.tkp.RcvCurve(ctx.pstat, max_size_rev)
-                signal = ctx.pstat.signal_ramp_new(v_reversal, v_final, cfg.scan_rev_v_s, sample_time, ctx.tkp.PSTATMODE)
+                signal = ctx.pstat.signal_ramp_new(
+                    v_reversal, v_final, cfg.scan_rev_v_s, sample_time, ctx.tkp.PSTATMODE
+                )
                 ctx.pstat.set_signal_ramp(signal)
                 ctx.pstat.init_signal()
 

@@ -21,6 +21,7 @@ RAW_FIELDS = {
     "cpp": {"x": "vf", "y": "im", "xlabel": "Potential (V)", "ylabel": "Current (A)"},
 }
 
+
 # TODO make faster using tolist
 def _plot_payload(name: str, data) -> dict | None:
     if data is None or len(data) == 0:
@@ -52,6 +53,7 @@ class SequencePhase(str, Enum):
     ERROR = "error"
     STOPPED = "stopped"
 
+
 class CurrentTechniqueStatus(BaseModel):
     technique: str
     plot: dict | None = None
@@ -75,14 +77,13 @@ class SequenceRunStatus(BaseModel):
     outdir: str
     technique_index: int = -1
     extra: str | None = None
-    current_technique : CurrentTechniqueStatus | None = None
+    current_technique: CurrentTechniqueStatus | None = None
 
     @property
     def time_elapsed_s(self) -> float | None:
         if self.sequence_end_s is not None:
             return self.sequence_end_s - self.sequenec_start_s
         return time.monotonic() - self.sequenec_start_s
-
 
 
 # TODO task based execution
@@ -175,6 +176,7 @@ class SequenceStatusTracker:
 
     def get_snapshot(self) -> SequenceRunStatus:
         return self.status.model_copy()
+
 
 def parse_sequence_status(event: dict) -> SequenceRunStatus:
     return SequenceRunStatus.model_validate(event)

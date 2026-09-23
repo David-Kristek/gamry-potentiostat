@@ -17,9 +17,8 @@ from __future__ import annotations
 import pandas as pd
 
 
-
-
 # --- DTA writing (POLRES: ToolkitPy has no native writer, Echem Analyst 2 needs a patched header) ---
+
 
 def _to_explain_header(header_str: str) -> str:
     """Patch a tkp.get_default_file_header() string to what Echem Analyst 2
@@ -29,9 +28,7 @@ def _to_explain_header(header_str: str) -> str:
     "...Time\\n\\nPSTAT\\t..." -- to anchor the insertion.
     """
     header_str = header_str.replace("TOOLKITPY\n", "EXPLAIN\n", 1)
-    return header_str.replace(
-        "\n\nPSTAT\t", "\nNOTES\tNOTES\t0\t&Notes...\n\nPSTAT\t", 1
-    )
+    return header_str.replace("\n\nPSTAT\t", "\nNOTES\tNOTES\t0\t&Notes...\n\nPSTAT\t", 1)
 
 
 def write_polarization_resistance_dta_file(
@@ -72,6 +69,7 @@ def write_polarization_resistance_dta_file(
 
 
 # --- DTA reading (for plotting / Origin export past runs) ---
+
 
 def read_dta_curve(dta_path: str) -> pd.DataFrame:
     """Pull every data table out of a Gamry-style .DTA file into one DataFrame.
@@ -130,4 +128,3 @@ def read_dta_curve(dta_path: str) -> pd.DataFrame:
     if not tables:
         return pd.DataFrame()
     return pd.concat(tables, ignore_index=True)
-

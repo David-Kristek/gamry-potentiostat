@@ -104,8 +104,6 @@ class TechniqueProgressEvent(WorkflowEvent):
     estimated_time_left: Optional[float]
 
 
-
-
 class TechniqueFinishEvent(WorkflowEvent):
     kind: Literal["technique_finish"] = "technique_finish"
     e_ocp: float

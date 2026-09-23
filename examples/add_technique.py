@@ -57,9 +57,7 @@ class Hold(Technique[HoldConfig]):
         curve = ctx.tkp.OcvCurve(ctx.pstat, max_size)
         signal = None
         try:
-            signal = ctx.pstat.signal_const_new(
-                cfg.voltage_v, cfg.total_time_s, cfg.sample_time_s, ctx.tkp.PSTATMODE
-            )
+            signal = ctx.pstat.signal_const_new(cfg.voltage_v, cfg.total_time_s, cfg.sample_time_s, ctx.tkp.PSTATMODE)
             ctx.pstat.set_cell(True)  # closed, unlike OCP -- that's the whole difference
             ctx.pstat.set_signal_const(signal)
             ctx.pstat.init_signal()

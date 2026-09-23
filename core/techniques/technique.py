@@ -12,7 +12,6 @@ from typing import (
     Generic,
     List,
     Optional,
-    Tuple,
     TypeVar,
 )
 
@@ -328,7 +327,9 @@ class Technique(ABC, Generic[ConfigT]):
         return max(1, int(duration_s / max(sample_time_s, 1e-6)))
 
     @classmethod
-    def estimate_remaining_time(cls, cfg: ConfigT, elapsed_s: float, points_collected: int, total_points: int) -> Optional[float]:
+    def estimate_remaining_time(
+        cls, cfg: ConfigT, elapsed_s: float, points_collected: int, total_points: int
+    ) -> Optional[float]:
         duration_s = cls.estimated_total_duration_s(cfg)
         if duration_s is not None:
             return max(0.0, duration_s - elapsed_s)

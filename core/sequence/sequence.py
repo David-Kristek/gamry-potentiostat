@@ -21,8 +21,10 @@ from potentiostat.core.techniques.technique import (
 from potentiostat.utils.technique_keys import base_technique
 from pydantic import BaseModel, Field
 
+
 class ExecuteSequenceConfig(BaseModel):
     """Configuration for executing a sequence of techniques."""
+
     # List[...]/Optional[...], not list[...]/X | None: pydantic evaluates
     # these eagerly even under `from __future__ import annotations`, and the
     # Gamry Python is 3.7 (no PEP 585/604 at runtime).

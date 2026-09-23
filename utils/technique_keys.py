@@ -17,6 +17,6 @@ def occurrence_keys(techniques: list[str]) -> list[str]:
 
 
 def base_technique(key: str) -> str:
-    """"eis_2" -> "eis"; "eis" -> "eis"."""
+    """ "eis_2" -> "eis"; "eis" -> "eis"."""
     base, sep, suffix = key.rpartition("_")
     return base if sep and suffix.isdigit() else key

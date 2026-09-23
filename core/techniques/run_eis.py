@@ -59,7 +59,9 @@ class EIS(Technique[EISConfig]):
         return _estimated_eis_points(initial_freq, final_freq, cfg.points_per_decade)
 
     @staticmethod
-    def estimate_remaining_time(cfg: EISConfig, elapsed_s: float, points_collected: int, total_points: int) -> Optional[float]:
+    def estimate_remaining_time(
+        cfg: EISConfig, elapsed_s: float, points_collected: int, total_points: int
+    ) -> Optional[float]:
         # Disabled: per-point time varies a lot across a log-frequency sweep (low freqs are
         # slow) and Gamry documents no timing model, so a linear extrapolation misleads.
         return None
@@ -140,10 +142,12 @@ class EIS(Technique[EISConfig]):
 
     def to_dataframe(self, data: TechniqueData, **kwargs) -> pd.DataFrame:
         # Custom (not the col_mapping default): "-ZIm (Ohm)" is the negated field.
-        return pd.DataFrame({
-            "Applied Frequency (Hz)": data["zfreq"],
-            "Z (Ohm)": data["zmod"],
-            "ZRe (Ohm)": data["zreal"],
-            "-ZIm (Ohm)": -data["zimag"],
-            "Phase (degree)": data["zphz"],
-        })
+        return pd.DataFrame(
+            {
+                "Applied Frequency (Hz)": data["zfreq"],
+                "Z (Ohm)": data["zmod"],
+                "ZRe (Ohm)": data["zreal"],
+                "-ZIm (Ohm)": -data["zimag"],
+                "Phase (degree)": data["zphz"],
+            }
+        )

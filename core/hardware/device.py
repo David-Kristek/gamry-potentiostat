@@ -49,9 +49,7 @@ def initialize_pstat_for_ramp(pstat) -> None:
     pstat.set_pos_feed_resistance(0.0)
 
 
-def check_scan_resolution(
-    pstat, voltage_list: list[float], scan_rate_v_s: float, sample_time_s: float
-) -> None:
+def check_scan_resolution(pstat, voltage_list: list[float], scan_rate_v_s: float, sample_time_s: float) -> None:
     """Validate that a ramp's scan_rate/sample_time combination produces a DAC
     step size the connected instrument can actually resolve, raising
     ValueError if not. Without this, a scan_rate too slow for its

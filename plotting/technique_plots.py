@@ -72,7 +72,9 @@ class TechniquePlotter(ABC):
         return fig
 
     @classmethod
-    def save_multi_figure(cls, plots_dir: str, dfs_dict: dict[str, pd.DataFrame], name: str, title: str | None = None) -> str:
+    def save_multi_figure(
+        cls, plots_dir: str, dfs_dict: dict[str, pd.DataFrame], name: str, title: str | None = None
+    ) -> str:
         """Build, save, and close a figure overlaying multiple datasets."""
         import matplotlib.pyplot as plt
 
@@ -113,6 +115,7 @@ class OCPPlotter(TechniquePlotter):
     @classmethod
     def plot_multi_data(cls, axes, dfs_dict, title="OCP"):
         import matplotlib.pyplot as plt
+
         ax = axes[0]
         cmap = plt.get_cmap("tab10")
         for i, (label, df) in enumerate(dfs_dict.items()):
@@ -143,6 +146,7 @@ class LPRPlotter(TechniquePlotter):
     @classmethod
     def plot_multi_data(cls, axes, dfs_dict, title="LPR"):
         import matplotlib.pyplot as plt
+
         ax = axes[0]
         cmap = plt.get_cmap("tab10")
         for i, (label, df) in enumerate(dfs_dict.items()):
@@ -180,7 +184,9 @@ class CPPPlotter(TechniquePlotter):
             lines = []
             for seg, group in df.groupby(segment_col):
                 logi = np.log10(group["Current_A"].abs().replace(0, float("nan")))
-                (line,) = ax.plot(logi, group["Potential_V"], color=colors[seg], linewidth=1.5, label=f"{segment_col}={seg}")
+                (line,) = ax.plot(
+                    logi, group["Potential_V"], color=colors[seg], linewidth=1.5, label=f"{segment_col}={seg}"
+                )
                 lines.append(line)
             ax.legend(frameon=False)
         else:
@@ -195,6 +201,7 @@ class CPPPlotter(TechniquePlotter):
     @classmethod
     def plot_multi_data(cls, axes, dfs_dict, title="CPP"):
         import matplotlib.pyplot as plt
+
         ax = axes[0]
         cmap = plt.get_cmap("tab10")
         for i, (label, df) in enumerate(dfs_dict.items()):
@@ -241,7 +248,9 @@ class EISPlotter(TechniquePlotter):
         ax_mag.set_title("Bode")
 
         ax_phz = ax_mag.twinx()
-        (phase,) = ax_phz.semilogx(df["Applied Frequency (Hz)"], df["Phase (degree)"], "o-", color=ORANGE, markersize=4, linewidth=1)
+        (phase,) = ax_phz.semilogx(
+            df["Applied Frequency (Hz)"], df["Phase (degree)"], "o-", color=ORANGE, markersize=4, linewidth=1
+        )
         ax_phz.set_ylabel("Phase (deg)", color=ORANGE)
         ax_phz.tick_params(axis="y", labelcolor=ORANGE)
         ax_phz.grid(False)
@@ -267,11 +276,29 @@ class EISPlotter(TechniquePlotter):
         for i, (label, df) in enumerate(dfs_dict.items()):
             col = cmap(i % 10)
             ax_nyq.plot(df["ZRe (Ohm)"], df["-ZIm (Ohm)"], "o-", color=col, markersize=3, linewidth=1.2, label=label)
-            ax_mag.loglog(df["Applied Frequency (Hz)"], df["Z (Ohm)"], "o-", color=col, markersize=3, linewidth=1.2, label=label)
+            ax_mag.loglog(
+                df["Applied Frequency (Hz)"], df["Z (Ohm)"], "o-", color=col, markersize=3, linewidth=1.2, label=label
+            )
             if twin_phz:
-                ax_phz.semilogx(df["Applied Frequency (Hz)"], df["Phase (degree)"], "s--", color=col, markersize=3, linewidth=1.2, alpha=0.6)
+                ax_phz.semilogx(
+                    df["Applied Frequency (Hz)"],
+                    df["Phase (degree)"],
+                    "s--",
+                    color=col,
+                    markersize=3,
+                    linewidth=1.2,
+                    alpha=0.6,
+                )
             else:
-                ax_phz.semilogx(df["Applied Frequency (Hz)"], df["Phase (degree)"], "o-", color=col, markersize=3, linewidth=1.2, label=label)
+                ax_phz.semilogx(
+                    df["Applied Frequency (Hz)"],
+                    df["Phase (degree)"],
+                    "o-",
+                    color=col,
+                    markersize=3,
+                    linewidth=1.2,
+                    label=label,
+                )
 
         ax_nyq.set_xlabel("Z' (Ohm)", fontweight="bold")
         ax_nyq.set_ylabel("-Z'' (Ohm)", fontweight="bold")
@@ -302,5 +329,3 @@ class EISPlotter(TechniquePlotter):
         for line in (nyquist, mag, phase):
             line.axes.relim()
             line.axes.autoscale_view()
-
-

@@ -39,6 +39,9 @@ classifiers = [
     "Topic :: Scientific/Engineering :: Chemistry",
 ]
 
+[project.optional-dependencies]
+dev = ["ruff>=0.8"]
+
 [tool.uv]
 # The Gamry 3.7 side is put on PYTHONPATH and never pip/uv-installed (see
 # gamry_potentiostat/env_validation.py), so uv only ever resolves this package
@@ -52,6 +55,17 @@ environments = ["python_full_version >= '3.11'"]
 # let this package resolve, build and be developed on its own. The aggregator
 # pins the same path; drop this once it resolves from the real index.
 pyproc-bridge = { path = "../pyproc-bridge" }
+
+[tool.ruff]
+# 120 columns, matching the sibling board-stage repo.
+line-length = 120
+target-version = "py37"
+
+[tool.ruff.lint]
+select = ["E", "F"]
+# The formatter owns line length; E501 only fires on long string literals it
+# cannot split (e.g. the [EIS] validation f-strings, a one-line docstring).
+ignore = ["E501"]
 
 [build-system]
 requires = ["setuptools>=61"]

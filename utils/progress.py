@@ -47,7 +47,9 @@ def throttle(seconds: float):
             return None
 
         return wrapper
+
     return decorator
+
 
 def estimate_technique_duration(name: str, cfg) -> float | None:
     if name == "ocp":

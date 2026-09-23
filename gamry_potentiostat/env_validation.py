@@ -91,9 +91,7 @@ def build_subprocess_env(
 
 def _verify_import(gamry_python: str, env: dict[str, str], module: str, hint: str) -> None:
     """Probe the target interpreter to confirm ``import <module>`` resolves."""
-    result = subprocess.run(
-        [gamry_python, "-c", f"import {module}"], env=env, capture_output=True, text=True
-    )
+    result = subprocess.run([gamry_python, "-c", f"import {module}"], env=env, capture_output=True, text=True)
     if result.returncode != 0:
         raise ImportError(
             f"Interpreter {gamry_python!r} cannot import {module}.\n"
@@ -115,18 +113,24 @@ def validate_and_prepare_environment(
     env = build_subprocess_env(framework_path=framework_path, source_root=source_root)
 
     _verify_import(
-        gamry_python, env, "potentiostat",
+        gamry_python,
+        env,
+        "potentiostat",
         "Either `pip install potentiostat` into this interpreter, or set "
         "GAMRY_SOURCE_ROOT to a checkout containing it.",
     )
     _verify_import(
-        gamry_python, env, "pyproc_bridge",
+        gamry_python,
+        env,
+        "pyproc_bridge",
         "add_bridge_to_pythonpath should have put this process's own "
         "pyproc_bridge install on the child's PYTHONPATH -- check that "
         "install is actually present (e.g. `uv sync`).",
     )
     _verify_import(
-        gamry_python, env, "toolkitpy",
+        gamry_python,
+        env,
+        "toolkitpy",
         "Follow Gamry's ToolkitPy install instructions for this interpreter, "
         "or set TOOLKITPY_HOME to the Framework folder.",
     )

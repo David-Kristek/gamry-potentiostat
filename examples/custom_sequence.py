@@ -30,9 +30,7 @@ def on_event(event: WorkflowEvent) -> None:
     print(f"[{event.kind}] {event.key}")
 
 
-def run_technique(
-    name: str, *, tkp, pstat, cfg: SequenceConfig, e_ocp: float, abort: AbortSignal
-) -> float:
+def run_technique(name: str, *, tkp, pstat, cfg: SequenceConfig, e_ocp: float, abort: AbortSignal) -> float:
     """Build the context and run one technique, returning its new Eoc --
     exactly what execute_sequence_sync's loop body does, pulled out here so
     custom control flow can call it as many or as few times as it wants."""

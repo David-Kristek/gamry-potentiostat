@@ -8,6 +8,7 @@ from potentiostat.core.sequence.sequence import ExecuteSequenceConfig, SequenceR
 from pyproc_bridge import AbortSignal, map_future, submit
 from pyproc_bridge.launcher import run_legacy_python_worker_sync
 
+
 def run_gamry_python_script(
     module: str,
     task: dict[str, Any],
