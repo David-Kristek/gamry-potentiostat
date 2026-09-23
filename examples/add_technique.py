@@ -7,7 +7,7 @@ ClassVar just by being defined -- so `Technique.get("hold")` below works the
 moment this module is imported, no explicit registration call needed.
 
 To make a technique like this permanently selectable through
-`execute_sequence`/`run_sequence`'s `techniques=[...]` list, the same way
+`execute_sequence`/`run_sequence`'s `technique_keys=[...]` list, the same way
 "ocp"/"eis"/"lpr"/"cpp" are: move the class into its own
 core/techniques/run_*.py, add its config as a field on `SequenceConfig`
 (parsing/sequence_config.py) named exactly like the technique (`from_sequence`

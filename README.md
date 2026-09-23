@@ -1,8 +1,10 @@
 # potentiostat
 
-Importable Python library that runs an **OCP → EIS → LPR → CPP** measurement
-sequence on a Gamry potentiostat via ToolkitPy. Used standalone here and as the
-measurement backend of the electrodeposition rig.
+Importable Python library for running measurement sequences on a Gamry
+potentiostat via ToolkitPy. It ships the four built-in techniques -- **OCP,
+EIS, LPR, CPP** -- and runs **any ordered combination of them** (a sequence
+must start with `ocp`); the same loop accepts your own techniques. Used
+standalone here and as the measurement backend of the electrodeposition rig.
 
 ## Architecture
 
@@ -41,7 +43,48 @@ print(results)  # per-technique outcomes + saved .DTA/.csv paths
 
 Under the Gamry interpreter you can skip the subprocess and call
 `potentiostat.execute_sequence_sync(cfg, abort=AbortSignal())` directly.
-Deeper demos (custom techniques, live plotting) live in [`examples/`](examples/).
+
+## Adding a technique
+
+Subclassing `Technique` auto-registers it under its `name`, so it runs in the
+sequence like any built-in. The sequence loop looks a technique's config up on
+the `SequenceConfig` by that same name, so expose it there (a local subclass
+leaves the shipped model, which mirrors the `.GSequence` format, untouched):
+
+```python
+from pydantic import Field
+from potentiostat import ExecuteSequenceConfig, SequenceConfig, execute_sequence
+from potentiostat.core.techniques import Technique
+from potentiostat.parsing.sequence_config import GamryBaseConfig
+
+
+class HoldConfig(GamryBaseConfig):
+    voltage_v: float = 0.1
+    total_time_s: float = 30.0
+
+
+class Hold(Technique[HoldConfig]):
+    name = "hold"  # registers on definition
+    col_mapping = {"time": "Time (s)", "vf": "Voltage (V)"}
+
+    def _initialize(self, ctx): ...  # set the control mode
+    def _measure(self, ctx): ...  # signal, acquire, write .DTA
+
+
+class MySequenceConfig(SequenceConfig):
+    hold: HoldConfig = Field(default_factory=HoldConfig)
+
+
+cfg = ExecuteSequenceConfig(
+    technique_keys=["ocp", "hold", "eis"],  # any order, must start with "ocp"
+    outdir="./run_output",
+    config=MySequenceConfig(),
+)
+print(execute_sequence(cfg).result())  # {key: csv/.dta paths}  (Gamry Python)
+```
+
+Full method bodies and the .DTA/CSV plumbing: [`examples/add_technique.py`](examples/add_technique.py).
+Deeper demos (custom sequences, live plotting) live in [`examples/`](examples/).
 
 ## Layout
 

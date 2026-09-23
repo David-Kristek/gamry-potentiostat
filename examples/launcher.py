@@ -73,7 +73,7 @@ def main() -> None:
     os.makedirs(OUT_DIR, exist_ok=True)
 
     cfg = ExecuteSequenceConfig(
-        techniques=["ocp", "eis", "lpr", "cpp"],  # must start with "ocp"
+        technique_keys=["ocp", "eis", "lpr", "cpp"],  # must start with "ocp"
         outdir=OUT_DIR,
         config=SequenceConfig(),
         pstat_name=None,

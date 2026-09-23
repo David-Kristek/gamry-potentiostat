@@ -50,7 +50,7 @@ def main() -> None:
     os.makedirs(OUT_DIR, exist_ok=True)
 
     cfg = ExecuteSequenceConfig(
-        techniques=["ocp", "hold", "eis"],  # must start with "ocp"
+        technique_keys=["ocp", "hold", "eis"],  # must start with "ocp"
         outdir=OUT_DIR,
         config=MySequenceConfig(hold=HoldConfig(voltage_v=0.1, total_time_s=30.0)),
         pstat_name=None,
