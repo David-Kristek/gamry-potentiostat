@@ -1,0 +1,76 @@
+[project]
+name = "potentiostat"
+version = "0.1.0"
+description = "Gamry potentiostat measurement library (OCP/EIS/LPR/CPP) driven via ToolkitPy."
+license = "MIT"
+authors = [{ name = "David Kristek", email = "david.kristek05@gmail.com" }]
+# The whole tree is imported under the Gamry-provided 32-bit Python 3.7 (put on
+# PYTHONPATH, not pip-installed -- see gamry_potentiostat/env_validation.py), so every module,
+# potentiostat.core included, must stay 3.7-compatible and the floor stays at
+# 3.7. Only potentiostat.core has to *run* there; the rest runs on any supported
+# interpreter.
+requires-python = ">=3.7"
+# numpy/pandas/matplotlib have no single release that covers both 3.7 and a
+# modern interpreter, so these are lower bounds only -- the Gamry 3.7 side uses
+# whatever that interpreter already ships. pydantic is capped because 2.6 dropped
+# 3.7 and parsing/ + core/ use the v2 API on both sides.
+dependencies = [
+    "numpy>=1.21",
+    "pandas>=1.3",
+    "matplotlib>=3.5",
+    "pydantic>=2.0,<2.6",
+    # Backports TypedDict/ClassVar/Annotated/Literal on the Gamry 3.7 side
+    # (stdlib typing only gained these in 3.8/3.9); pydantic already needs it
+    # there too. Not pip-managed on that interpreter -- see env_validation.py.
+    "typing_extensions",
+    # Generic legacy-interpreter IPC bridge (Supervisor/Worker protocol,
+    # AbortSignal, submit) -- core.sequence_script runs under the Gamry
+    # Python too, so this needs to be installed there as well; see
+    # gamry_potentiostat/env_validation.py and the aggregator's README
+    # (../gamry_potentiostat/README.md).
+    "pyproc-bridge>=0.1.0",
+]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Science/Research",
+    "Operating System :: Microsoft :: Windows",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.7",
+    "Topic :: Scientific/Engineering :: Chemistry",
+]
+
+[tool.uv]
+# The Gamry 3.7 side is put on PYTHONPATH and never pip/uv-installed (see
+# gamry_potentiostat/env_validation.py), so uv only ever resolves this package
+# for the modern host interpreters. Without this, a universal lock would have to
+# satisfy the pandas/numpy 3.7 and 3.9+ ranges simultaneously, which is
+# unsatisfiable.
+environments = ["python_full_version >= '3.11'"]
+
+[tool.uv.sources]
+# pyproc-bridge isn't published to PyPI yet, so point at the sibling checkout to
+# let this package resolve, build and be developed on its own. The aggregator
+# pins the same path; drop this once it resolves from the real index.
+pyproc-bridge = { path = "../pyproc-bridge" }
+
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+# Flat layout: package files sit next to this pyproject, so the top-level
+# package is remapped to "." and sub-packages are listed explicitly.
+# hatchling cannot express a flat editable install of this shape.
+[tool.setuptools]
+package-dir = { "potentiostat" = "." }
+packages = [
+    "potentiostat",
+    "potentiostat.core",
+    "potentiostat.core.hardware",
+    "potentiostat.core.sequence",
+    "potentiostat.core.techniques",
+    "potentiostat.core.workflow",
+    "potentiostat.gamry_potentiostat",
+    "potentiostat.parsing",
+    "potentiostat.plotting",
+    "potentiostat.utils",
+]
