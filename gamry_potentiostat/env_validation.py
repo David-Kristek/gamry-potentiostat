@@ -10,8 +10,9 @@ stdlib, so ``add_bridge_to_pythonpath`` just puts this process's own
 ``pyproc_bridge`` install on the child's ``PYTHONPATH`` instead. ``potentiostat``
 does need to be resolvable there -- either a plain, non-editable ``pip
 install`` (no PEP 660 editable install needed), or, for local development,
-``source_root`` (e.g. a ``GAMRY_SOURCE_ROOT`` env var) pointing at a source
-checkout, prepended to the child's ``PYTHONPATH`` instead. Leave it unset
+``source_root`` (e.g. a ``GAMRY_SOURCE_ROOT`` env var) pointing at
+the directory that *contains* the ``potentiostat`` package (the checkout's
+parent), prepended to the child's ``PYTHONPATH`` instead. Leave it unset
 once the real install is in place; interpreter, Framework and source root are
 auto-detected, and pydantic is installed on demand.
 """
@@ -60,16 +61,25 @@ def validate_gamry_python(gamry_python: str | None = None) -> str:
 
 
 def resolve_source_root(source_root: str | None = None) -> str | None:
-    """Return explicit source_root or GAMRY_SOURCE_ROOT, else auto-detect a checkout."""
+    """Return the directory to put on the child's ``PYTHONPATH`` so that
+    ``import potentiostat`` resolves: explicit ``source_root``, else
+    ``GAMRY_SOURCE_ROOT``, else auto-detect from a real source checkout.
+
+    This is the directory *containing* the ``potentiostat`` package -- the
+    parent of the checkout (``.../bam_f``), not the checkout itself
+    (``.../bam_f/potentiostat``). Putting the package directory on
+    ``PYTHONPATH`` would send Python looking for ``potentiostat/potentiostat``.
+    """
     if source_root:
         return source_root
     env_root = os.getenv("GAMRY_SOURCE_ROOT")
     if env_root:
         return env_root
-    # Only auto-detect from a real source checkout (repo root, not site-packages).
+    # Only auto-detect from a real source checkout (repo root, not site-packages):
+    # ``parents[1]`` is the package directory, so its parent is the import root.
     candidate = Path(__file__).resolve().parents[1]
     if (candidate / "pyproject.toml").is_file() and (candidate / "gamry_potentiostat").is_dir():
-        return str(candidate)
+        return str(candidate.parent)
     return None
 
 
@@ -191,7 +201,8 @@ def validate_and_prepare_environment(
         env,
         "potentiostat",
         "Either `pip install potentiostat` into this interpreter, or set "
-        "GAMRY_SOURCE_ROOT to a checkout containing it.",
+        "GAMRY_SOURCE_ROOT to the directory that contains the `potentiostat` "
+        "package (the checkout's parent, e.g. C:\\path\\to\\bam_f).",
     )
     _verify_import(
         gamry_python,
