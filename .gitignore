@@ -7,3 +7,6 @@ __pycache__/
 .ruff_cache/
 dist/
 build/
+
+# Machine-specific settings -- see .env.example.
+.env
