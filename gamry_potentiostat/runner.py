@@ -2,7 +2,10 @@ import concurrent.futures as futures
 import os
 from typing import Any, Callable
 
-from potentiostat.gamry_potentiostat.env_validation import validate_and_prepare_environment
+from potentiostat.gamry_potentiostat.env_validation import (
+    resolve_source_root,
+    validate_and_prepare_environment,
+)
 from potentiostat.core.workflow.emitter import WorkflowEvent, parse_workflow_event
 from potentiostat.core.sequence.sequence import ExecuteSequenceConfig, SequenceResults
 from pyproc_bridge import AbortSignal, map_future, submit
@@ -19,7 +22,7 @@ def run_gamry_python_script(
 ) -> futures.Future[str]:
 
     def _run() -> str:
-        source_root = os.getenv("GAMRY_SOURCE_ROOT")
+        source_root = resolve_source_root()
         gamry_python, env = validate_and_prepare_environment(
             os.getenv("GAMRY_PYTHON"), os.getenv("TOOLKITPY_HOME"), source_root
         )
