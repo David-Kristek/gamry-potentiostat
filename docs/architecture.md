@@ -1,5 +1,7 @@
 # Architecture
 
+![Two-interpreter split: host runs run_sequence, Gamry Python 3.7 runs execute_sequence_sync, over pyproc-bridge](images/architecture.svg)
+
 ## Why two interpreters
 
 ToolkitPy only installs into Gamry's bundled **32-bit Python 3.7**. Everything

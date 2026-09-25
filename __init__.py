@@ -1,8 +1,7 @@
 """Potentiostat measurement library: connects to a Gamry potentiostat via
 ToolkitPy and runs the OCP -> EIS -> LPR -> CPP sequence. It only does the
 measurement work that runs under the Gamry 32-bit Python -- filling in the
-run parameters and launching a sequence lives in ``examples/`` (this rig)
-and ``potentiostat/examples/`` (generic references for the library itself):
+run parameters and launching a sequence is shown in ``examples/``:
 either directly under the Gamry Python (``core.sequence.execute_sequence``,
 no subprocess) or from any interpreter via
 ``gamry_potentiostat.runner.run_sequence``, which spawns the Gamry Python

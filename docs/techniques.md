@@ -45,5 +45,5 @@ time; otherwise they are absolute.
 (and optional `legs` for multi-leg scans). Progress is reported through
 `ctx.emitter.emit_progress(...)`.
 
-See `examples/` for a minimal one-technique run, a custom technique, and
-custom control flow.
+See `examples/` for a minimal one-technique run, the full-sequence live-plot
+run, a custom technique, and custom control flow.

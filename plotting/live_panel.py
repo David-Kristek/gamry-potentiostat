@@ -11,7 +11,7 @@ plotter's update.
 
 Progress events can arrive from any thread (the caller is expected to run
 the sequence on a side thread and keep the main thread free for matplotlib --
-see examples/run_measurement.py). Only Artist data is mutated off the main
+see examples/run_sequence.py). Only Artist data is mutated off the main
 thread (locked); the canvas is only ever touched by `_redraw`, on a
 FuncAnimation timer that matplotlib always fires on the main thread.
 

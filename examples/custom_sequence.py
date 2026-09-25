@@ -1,5 +1,5 @@
 """Custom sequence logic: skip `execute_sequence`'s fixed ocp-first loop
-(core/sequence.py::execute_sequence_sync) and call technique runners
+(core/sequence/sequence.py::execute_sequence_sync) and call technique runners
 directly, branching on results as you go -- for when "OCP first, then the
 rest in list order" doesn't fit: skipping a technique based on what OCP
 measured, repeating one, or running an order the built-in loop can't express.
@@ -9,7 +9,7 @@ Run under the Gamry 32-bit Python:
     "C:/.../Gamry Instruments/.../python.exe" -m examples.custom_sequence
 
 See examples/single_technique.py for the simplest possible one-technique run,
-and examples/run_measurement.py for the built-in full-sequence orchestrator
+and examples/run_sequence.py for the built-in full-sequence orchestrator
 this bypasses.
 """
 

@@ -1,18 +1,14 @@
-"""Add a new technique: subclass `Technique`, give it its own tiny Pydantic
-config, and run it -- no changes to core/techniques/ or SequenceConfig needed
-for an ad hoc/one-off technique like this one.
+"""Add a new technique and run it in a sequence.
 
-`Technique.__init_subclass__` auto-registers any subclass that sets a `name`
-ClassVar just by being defined -- so `Technique.get("hold")` below works the
-moment this module is imported, no explicit registration call needed.
+Defining `Hold` registers it on the Technique registry just by setting `name`;
+giving it a config field on a local `SequenceConfig` subclass lets
+`execute_sequence` pull its parameters up by name, exactly like the built-ins.
+Nothing in core/techniques/ or the shared parsing/sequence_config.py changes.
 
-To make a technique like this permanently selectable through
-`execute_sequence`/`run_sequence`'s `technique_keys=[...]` list, the same way
-"ocp"/"eis"/"lpr"/"cpp" are: move the class into its own
-core/techniques/run_*.py, add its config as a field on `SequenceConfig`
-(parsing/sequence_config.py) named exactly like the technique (`from_sequence`
-looks it up via `getattr(config, technique_name)`), and import that module
-from core/techniques/__init__.py so it registers on import.
+To make a technique a permanent built-in instead: move the class into its own
+core/techniques/run_*.py, add its config as a field on the shipped
+`SequenceConfig`, and import that module from core/techniques/__init__.py so it
+registers on import.
 
 Run under the Gamry 32-bit Python:
 
@@ -23,16 +19,14 @@ from __future__ import annotations
 
 import os
 import time
-from functools import partial
 
-from potentiostat.core.hardware.device import cleanup_ramp_curve, open_session
-from potentiostat.core.techniques.technique import (
-    Technique,
-    TechniqueContext,
-    TechniqueEmitter,
-    TechniqueResult,
-    TechniqueTime,
-)
+from pydantic import Field
+from pyproc_bridge import AbortError
+
+from potentiostat import ExecuteSequenceConfig, SequenceConfig, execute_sequence
+from potentiostat.core.hardware.device import cleanup_ramp_curve
+from potentiostat.core.techniques.technique import Technique, TechniqueContext, TechniqueResult
+from potentiostat.core.workflow.emitter import WorkflowEvent
 from potentiostat.parsing.sequence_config import GamryBaseConfig
 
 OUT_DIR = "./run_output"
@@ -45,11 +39,12 @@ class HoldConfig(GamryBaseConfig):
 
 
 class Hold(Technique[HoldConfig]):
-    """Potentiostatic hold at a fixed voltage -- almost identical to
-    core/techniques/run_ocp.py's OCP, except the cell stays closed at a set
-    voltage instead of open. Kept as the smallest possible diff from OCP so
-    every piece a real technique needs stays visible: _initialize, _measure,
-    a TechniqueResult, and the col_mapping to_dataframe()/write_csv() use."""
+    """Potentiostatic hold at a fixed voltage -- OCP with the cell closed.
+
+    Kept as the smallest possible diff from core/techniques/run_ocp.py so every
+    piece a technique needs stays visible: `_initialize`, `_measure`, a
+    `TechniqueResult`, and the `col_mapping` that seeds the CSV columns.
+    """
 
     name = "hold"
     col_mapping = {"time": "Time (s)", "vf": "Voltage (V)"}
@@ -65,7 +60,7 @@ class Hold(Technique[HoldConfig]):
         signal = None
         try:
             signal = ctx.pstat.signal_const_new(cfg.voltage_v, cfg.total_time_s, cfg.sample_time_s, ctx.tkp.PSTATMODE)
-            ctx.pstat.set_cell(True)  # closed, unlike OCP -- that's the whole difference
+            ctx.pstat.set_cell(True)  # closed, unlike OCP -- the whole difference
             ctx.pstat.set_signal_const(signal)
             ctx.pstat.init_signal()
 
@@ -76,9 +71,8 @@ class Hold(Technique[HoldConfig]):
                 ctx.emitter.emit_progress(curve.acq_data())
 
             raw = curve.acq_data()
-            # "CORPOT" is OCP's DTA-type tag, reused here for illustration --
-            # check ToolkitPy's DTA-type table for the correct tag before
-            # relying on this for a real chronoamperometry run.
+            # "CORPOT" is OCP's DTA-type tag, reused for illustration -- check
+            # ToolkitPy's DTA-type table before a real chronoamperometry run.
             ctx.tkp.print_default_dta_file(curve, ctx.pstat, ctx.dta_path, "CORPOT")
         finally:
             cleanup_ramp_curve(ctx.tkp, ctx.pstat, curve, signal)
@@ -87,40 +81,35 @@ class Hold(Technique[HoldConfig]):
         return {"data": raw, "dta_path": ctx.dta_path, "csv_path": ctx.csv_path}, final_v
 
 
+class MySequenceConfig(SequenceConfig):
+    """`SequenceConfig` plus the one-off "hold" technique (a local subclass, so
+    the shared model that mirrors the .GSequence format stays untouched)."""
+
+    hold: HoldConfig = Field(default_factory=HoldConfig)
+
+
+def on_event(event: WorkflowEvent) -> None:
+    print(f"[{event.kind}] {event.key}")
+
+
 def main() -> None:
     os.makedirs(OUT_DIR, exist_ok=True)
 
-    technique = Technique.get("hold")()
-    cfg = HoldConfig(voltage_v=0.1, total_time_s=30.0)
+    cfg = ExecuteSequenceConfig(
+        technique_keys=["ocp", "hold", "eis"],  # any order, must start with "ocp"
+        outdir=OUT_DIR,
+        config=MySequenceConfig(hold=HoldConfig(voltage_v=0.1, total_time_s=30.0)),
+    )
 
-    with open_session(None) as (tkp, pstat):
-        # Built by hand rather than TechniqueContext.from_sequence(), since
-        # "hold" isn't a field on SequenceConfig -- from_sequence() only
-        # knows how to pull a technique's config off SequenceConfig by name.
-        timer = TechniqueTime(
-            estimator=partial(technique.estimate_remaining_time, cfg),
-            total_points=technique.estimated_total_points(cfg) or 0,
-        )
-        ctx = TechniqueContext(
-            key="hold",
-            technique_name="hold",
-            cfg=cfg,
-            e_ocp=0.0,
-            outdir=OUT_DIR,
-            pstat=pstat,
-            tkp=tkp,
-            emitter=TechniqueEmitter(
-                key="hold",
-                technique_name="hold",
-                on_event=lambda e: print(f"[{e.kind}] {e.key}"),
-                time=timer,
-                abort=None,
-            ),
-            abort=None,
-        )
-        result, final_v = technique.run(ctx)
-
-    print(f"hold: final voltage = {final_v:+.4f} V -> {result['csv_path']}")
+    future = execute_sequence(cfg, on_event=on_event)  # runs on a side thread
+    try:
+        results = future.result()
+    except AbortError:
+        print("run aborted")
+    else:
+        print("sequence complete:")
+        for key in results:
+            print(f"  {key}: {results[key].csv_path}")
 
 
 if __name__ == "__main__":

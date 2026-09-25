@@ -1,10 +1,16 @@
 # potentiostat
 
+> **Alpha / unofficial.** An unofficial wrapper around Gamry's ToolkitPy
+> library, not affiliated with or endorsed by Gamry Instruments. It is in an
+> early alpha stage, so APIs and behaviour may change between releases.
+
 Run measurement sequences on a Gamry potentiostat via ToolkitPy.
 
 Ships four techniques -- **OCP, EIS, LPR, CPP** -- and runs any ordered
 combination of them (a sequence must start with `ocp`). Custom techniques plug
 into the same loop.
+
+![Example output: OCP, EIS (Nyquist + Bode), LPR and CPP panels](docs/images/sample-output.png)
 
 ## Setup
 
@@ -87,8 +93,16 @@ cfg = ExecuteSequenceConfig(technique_keys=["ocp", "hold", "eis"], outdir="./run
 print(execute_sequence(cfg).result())
 ```
 
-More in [docs/techniques.md](docs/techniques.md); runnable references in
-[`examples/`](examples/).
+More in [docs/techniques.md](docs/techniques.md).
+
+## Examples
+
+| Example | Shows |
+|---|---|
+| [`single_technique.py`](examples/single_technique.py) | minimal one-technique run (direct, no plot) |
+| [`run_sequence.py`](examples/run_sequence.py) | full sequence from any interpreter + live panel |
+| [`add_technique.py`](examples/add_technique.py) | define a custom technique and run it in a sequence |
+| [`custom_sequence.py`](examples/custom_sequence.py) | custom control flow (branching, repeats, order) |
 
 ## Docs
 
