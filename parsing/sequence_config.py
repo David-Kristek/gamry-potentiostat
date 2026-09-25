@@ -158,18 +158,18 @@ class CPPConfig(GamryBaseConfig):
     @model_validator(mode="before")
     @classmethod
     def parse_poten(cls, data: Dict[str, Any]) -> Dict[str, Any]:
-        for tag, field, default in [
-            ("VINIT", "v_init_v", -0.25),
-            ("VAPEX", "v_apex_v", 1.5),
-            ("VFINAL", "v_final_v", 0.0),
+        for tag, field, versus_field, default in [
+            ("VINIT", "v_init_v", "v_init_versus_eoc", -0.25),
+            ("VAPEX", "v_apex_v", "v_apex_versus_eoc", 1.5),
+            ("VFINAL", "v_final_v", "v_final_versus_eoc", 0.0),
         ]:
             val_data = data.get(tag)
             if isinstance(val_data, dict):
                 data[field] = float(val_data.get("value", default))
-                data[f"{field}_versus_eoc"] = val_data.get("versus") == "1"
+                data[versus_field] = val_data.get("versus") == "1"
             elif field not in data:
                 data[field] = float(data.get(field, default))
-                data[f"{field}_versus_eoc"] = bool(data.get(f"{field}_versus_eoc", True))
+                data[versus_field] = bool(data.get(versus_field, True))
         return data
 
 

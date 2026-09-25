@@ -40,7 +40,7 @@ classifiers = [
 ]
 
 [project.optional-dependencies]
-dev = ["ruff>=0.8"]
+dev = ["ruff>=0.8", "pytest>=7.4"]
 
 [tool.uv]
 # The Gamry 3.7 side is put on PYTHONPATH and never pip/uv-installed (see
@@ -55,6 +55,13 @@ environments = ["python_full_version >= '3.11'"]
 # let this package resolve, build and be developed on its own. The aggregator
 # pins the same path; drop this once it resolves from the real index.
 pyproc-bridge = { path = "../pyproc-bridge" }
+
+[tool.pytest.ini_options]
+# Tests live outside the package (tests/, not potentiostat/) and exercise the
+# hardware-independent logic on the host interpreter -- no Gamry Python needed.
+# The suite itself may use modern Python; only the package source stays 3.7.
+testpaths = ["tests"]
+addopts = "-q"
 
 [tool.ruff]
 # 120 columns, matching the sibling board-stage repo.
