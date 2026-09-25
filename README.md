@@ -4,7 +4,8 @@
 > library, not affiliated with or endorsed by Gamry Instruments. It is in an
 > early alpha stage, so APIs and behaviour may change between releases.
 
-Run measurement sequences on a Gamry potentiostat via ToolkitPy.
+Run measurement sequences on a Gamry potentiostat via ToolkitPy. Mainly
+intended for **automating experiments** with Gamry potentiostats.
 
 Ships four techniques -- **OCP, EIS, LPR, CPP** -- and runs any ordered
 combination of them (a sequence must start with `ocp`). Custom techniques plug
