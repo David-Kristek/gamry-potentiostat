@@ -23,9 +23,16 @@ from __future__ import annotations
 
 import os
 import time
+from functools import partial
 
 from potentiostat.core.hardware.device import cleanup_ramp_curve, open_session
-from potentiostat.core.techniques.technique import Technique, TechniqueContext, TechniqueResult
+from potentiostat.core.techniques.technique import (
+    Technique,
+    TechniqueContext,
+    TechniqueEmitter,
+    TechniqueResult,
+    TechniqueTime,
+)
 from potentiostat.parsing.sequence_config import GamryBaseConfig
 
 OUT_DIR = "./run_output"
@@ -65,9 +72,8 @@ class Hold(Technique[HoldConfig]):
             curve.run(True)
             while ctx.tkp.pstat_is_valid(ctx.pstat) and curve.running():
                 time.sleep(max(0.01, min(cfg.sample_time_s, 0.25)))
-                if ctx.abort:
-                    break
-                ctx.emit_progress(curve.acq_data())
+                ctx.raise_if_aborted()
+                ctx.emitter.emit_progress(curve.acq_data())
 
             raw = curve.acq_data()
             # "CORPOT" is OCP's DTA-type tag, reused here for illustration --
@@ -84,22 +90,35 @@ class Hold(Technique[HoldConfig]):
 def main() -> None:
     os.makedirs(OUT_DIR, exist_ok=True)
 
+    technique = Technique.get("hold")()
+    cfg = HoldConfig(voltage_v=0.1, total_time_s=30.0)
+
     with open_session(None) as (tkp, pstat):
         # Built by hand rather than TechniqueContext.from_sequence(), since
         # "hold" isn't a field on SequenceConfig -- from_sequence() only
         # knows how to pull a technique's config off SequenceConfig by name.
+        timer = TechniqueTime(
+            estimator=partial(technique.estimate_remaining_time, cfg),
+            total_points=technique.estimated_total_points(cfg) or 0,
+        )
         ctx = TechniqueContext(
             key="hold",
-            tkp=tkp,
-            pstat=pstat,
-            cfg=HoldConfig(voltage_v=0.1, total_time_s=30.0),
+            technique_name="hold",
+            cfg=cfg,
             e_ocp=0.0,
             outdir=OUT_DIR,
-            on_event=lambda e: print(f"[{e.kind}] {e.key}"),
+            pstat=pstat,
+            tkp=tkp,
+            emitter=TechniqueEmitter(
+                key="hold",
+                technique_name="hold",
+                on_event=lambda e: print(f"[{e.kind}] {e.key}"),
+                time=timer,
+                abort=None,
+            ),
             abort=None,
-            technique_name="hold",
         )
-        result, final_v = Technique.get("hold")().run(ctx)
+        result, final_v = technique.run(ctx)
 
     print(f"hold: final voltage = {final_v:+.4f} V -> {result['csv_path']}")
 

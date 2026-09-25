@@ -122,8 +122,7 @@ class EIS(Technique[EISConfig]):
 
                 zcurve.add_point(readz, temp)
 
-                if ctx.abort:
-                    break
+                ctx.raise_if_aborted()
                 ctx.emitter.emit_progress(zcurve.acq_data())
                 time.sleep(0.010)
 

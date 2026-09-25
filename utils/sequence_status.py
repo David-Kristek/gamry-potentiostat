@@ -4,7 +4,7 @@ from potentiostat.core.workflow.emitter import (
     TechniqueFinishEvent,
     TechniqueErrorEvent,
 )
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from enum import Enum
 from concurrent.futures import Future
 from pyproc_bridge import AbortError
@@ -12,18 +12,56 @@ from typing import Callable
 from potentiostat.utils import throttle
 from potentiostat.utils.technique_keys import base_technique
 from potentiostat.core.workflow.emitter import WorkflowEmitter
+import math
 import time
 
 
+# Axis labels mirror potentiostat/plotting/technique_plots.py so the plotted
+# payload and the saved/live matplotlib figures agree. CPP is not a plain field
+# pair -- its plotter puts log|I| on x and potential on y -- so it is handled
+# separately in _plot_payload.
 RAW_FIELDS = {
-    "ocp": {"x": "time", "y": "vf", "xlabel": "Time (s)", "ylabel": "Eoc (V)"},
+    "ocp": {"x": "time", "y": "vf", "xlabel": "Time (s)", "ylabel": "OCP (V)"},
     "lpr": {"x": "vf", "y": "im", "xlabel": "Potential (V)", "ylabel": "Current (A)"},
-    "cpp": {"x": "vf", "y": "im", "xlabel": "Potential (V)", "ylabel": "Current (A)"},
 }
 
 
+def _log_abs(value) -> float | None:
+    """log10|value|, or None where the magnitude is zero / not finite (a gap)."""
+    magnitude = abs(float(value))
+    return math.log10(magnitude) if magnitude > 0 else None
+
+
+# Each curve in the pushed payload is capped here. The server replaces its
+# whole snapshot on every push (no merge), so without a cap a long OCP curve
+# would be re-uploaded every emit_interval_s for the rest of the sequence.
+# Only this display payload is thinned -- the saved CSV/DTA data is untouched.
+MAX_PLOT_POINTS = 1000
+
+
+def _thin_pair(x: list, y: list, max_points: int = MAX_PLOT_POINTS) -> tuple[list, list]:
+    step = max(1, math.ceil(len(x) / max_points))
+    return (x[::step], y[::step]) if step > 1 else (x, y)
+
+
+def _thin_xy(payload: dict, max_points: int) -> dict:
+    x, y = payload.get("x"), payload.get("y")
+    if x is None or y is None:
+        return payload
+    x, y = _thin_pair(x, y, max_points)
+    return {**payload, "x": x, "y": y}
+
+
+def _thin_payload(payload: dict | None, max_points: int = MAX_PLOT_POINTS) -> dict | None:
+    if payload is None:
+        return None
+    if "nyquist" in payload:  # EIS: each sub-panel is its own {x, y}
+        return {name: _thin_xy(part, max_points) for name, part in payload.items()}
+    return _thin_xy(payload, max_points)
+
+
 # TODO make faster using tolist
-def _plot_payload(name: str, data) -> dict | None:
+def _build_plot_payload(name: str, data) -> dict | None:
     if data is None or len(data) == 0:
         return None
     if name == "eis":
@@ -35,6 +73,13 @@ def _plot_payload(name: str, data) -> dict | None:
             "bode_mag": {"x": freq, "y": [float(v) for v in data["zmod"]]},
             "bode_phase": {"x": freq, "y": [float(v) for v in data["zphz"]]},
         }
+    if name == "cpp":
+        return {
+            "x": [_log_abs(v) for v in data["im"]],
+            "y": [float(v) for v in data["vf"]],
+            "xlabel": "log|I| (A)",
+            "ylabel": "Potential (V)",
+        }
     fields = RAW_FIELDS.get(name)
     if fields is None:
         return None
@@ -44,6 +89,11 @@ def _plot_payload(name: str, data) -> dict | None:
         "xlabel": fields["xlabel"],
         "ylabel": fields["ylabel"],
     }
+
+
+def _plot_payload(name: str, data) -> dict | None:
+    """JSON plot for `name`, thinned to `MAX_PLOT_POINTS` per curve."""
+    return _thin_payload(_build_plot_payload(name, data))
 
 
 class SequencePhase(str, Enum):
@@ -78,6 +128,7 @@ class SequenceRunStatus(BaseModel):
     technique_index: int = -1
     extra: str | None = None
     current_technique: CurrentTechniqueStatus | None = None
+    plots: dict[str, dict] = Field(default_factory=dict)
 
     @property
     def time_elapsed_s(self) -> float | None:
@@ -103,22 +154,29 @@ class SequenceStatusTracker:
             outdir=outdir,
         )
         self.on_status = on_status or (lambda status: None)
+        self._push = throttle(emit_interval_s)(self._notify)
 
-        emitter.on(TechniqueProgressEvent)(throttle(emit_interval_s)(self._update_progress))
+        emitter.on(TechniqueProgressEvent)(self._update_progress)
         emitter.on(TechniqueFinishEvent)(self._update_finish)
         emitter.on(TechniqueErrorEvent)(self._update_finish)
 
+    def _notify(self):
+        self.on_status(self.status)
+
     def _update_progress(self, event: TechniqueProgressEvent):
+        payload = _plot_payload(base_technique(event.key), event.data)
+        if payload is not None:
+            self.status.plots[event.key] = payload
         self.status.phase = SequencePhase.RUNNING
         self.status.technique_index = self.status.technique_keys.index(event.key)
         self.status.current_technique = CurrentTechniqueStatus(
             technique=event.technique_name,
-            plot=_plot_payload(base_technique(event.key), event.data),
+            plot=payload,
             elapsed_s=event.elapsed_s,
             estimated_time_left=event.estimated_time_left,
         )
         self.status.extra = f"{len(event.data)} point(s) collected"
-        self.on_status(self.status)
+        self._push()
 
     def _update_finish(self, event: TechniqueFinishEvent | TechniqueErrorEvent):
         self.status.technique_index = self.status.technique_keys.index(event.key)
@@ -136,7 +194,7 @@ class SequenceStatusTracker:
         else:
             self.status.phase = SequencePhase.ERROR
             self.status.extra = f"error: {event.error}"
-        self.on_status(self.status)
+        self._notify()
 
     def update_by_event(self, event: WorkflowEvent):
         if isinstance(event, TechniqueProgressEvent):
@@ -148,7 +206,7 @@ class SequenceStatusTracker:
         self.status.phase = phase
         self.status.extra = extra
         self.status.sequence_end_s = time.monotonic()
-        self.on_status(self.status)
+        self._notify()
 
     def watch(self, future: Future):
         """Push the final done/stopped/error status once `future` settles."""
@@ -175,7 +233,7 @@ class SequenceStatusTracker:
         self._finish(SequencePhase.STOPPED, "stop requested")
 
     def get_snapshot(self) -> SequenceRunStatus:
-        return self.status.model_copy()
+        return self.status.model_copy(deep=True)
 
 
 def parse_sequence_status(event: dict) -> SequenceRunStatus:

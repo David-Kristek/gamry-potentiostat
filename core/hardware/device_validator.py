@@ -95,7 +95,7 @@ def get_pstat_info(pstat: Any) -> Dict[str, Any]:
     """
     label = "Unknown Pstat"
     serial_no = "Unknown S/N"
-    model_no = "600"
+    model_no = None
 
     if pstat is not None:
         for label_attr in ["label", "Label", "Section", "section"]:
@@ -127,14 +127,23 @@ def get_pstat_info(pstat: Any) -> Dict[str, Any]:
 
     model_key = label.upper()
     specs = None
+    # Match the label first; only fall back to the model number when the label
+    # is unknown. Checking `model_no in k` across every key first would let a
+    # default/loose model number pick the wrong entry (e.g. "600" matching
+    # "REFERENCE 600+" for an Interface).
     for k, v in MODEL_SPECS.items():
-        if k in model_key or model_no in k:
+        if k in model_key:
             specs = v.copy()
             break
+    if specs is None and model_no:
+        for k, v in MODEL_SPECS.items():
+            if model_no in k:
+                specs = v.copy()
+                break
 
     if specs is None:
         specs = MODEL_SPECS["GENERIC"].copy()
-        specs["name"] = f"Gamry Pstat (Model {model_no})"
+        specs["name"] = f"Gamry Pstat (Model {model_no or 'unknown'})"
 
     if pstat is not None:
         if hasattr(pstat, "freq_limit_lower"):
@@ -150,7 +159,7 @@ def get_pstat_info(pstat: Any) -> Dict[str, Any]:
 
     specs["label"] = label
     specs["serial_no"] = serial_no
-    specs["model_no"] = model_no
+    specs["model_no"] = model_no or "unknown"
     return specs
 
 

@@ -49,6 +49,8 @@ def execute_sequence_sync(
     if len(set(cfg.technique_keys)) != len(cfg.technique_keys):
         raise ValueError("Technique keys must be unique.")
 
+    abort.raise_if_aborted()  # don't touch hardware if already cancelled
+
     e_ocp = 0.0
     outcomes: dict[str, TechniqueOutcome] = {}
 
@@ -56,8 +58,7 @@ def execute_sequence_sync(
         device_validator.validate_device_parameters(pstat, cfg.config, raise_on_error=True)
 
         for name, key in zip(techniques, cfg.technique_keys):
-            if abort.aborted:
-                break
+            abort.raise_if_aborted()
 
             ctx = TechniqueContext.from_sequence(
                 key=key,

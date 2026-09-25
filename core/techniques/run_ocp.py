@@ -47,8 +47,7 @@ class OCP(Technique[OCPConfig]):
             curve.run(True)
             while ctx.tkp.pstat_is_valid(ctx.pstat) and curve.running():
                 time.sleep(max(0.01, min(cfg.sample_time_s, 0.25)))
-                if ctx.abort:
-                    break
+                ctx.raise_if_aborted()
                 ctx.emitter.emit_progress(curve.acq_data())
 
             raw = curve.acq_data()

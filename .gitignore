@@ -7,6 +7,7 @@ __pycache__/
 .ruff_cache/
 dist/
 build/
+.vscode/
 
 # Machine-specific settings -- see .env.example.
 .env

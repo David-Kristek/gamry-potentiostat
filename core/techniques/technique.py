@@ -180,6 +180,13 @@ class TechniqueContext(Generic[ConfigT]):
     def dta_path(self) -> str:
         return os.path.join(self.outdir, f"{self.key}.dta")
 
+    def raise_if_aborted(self) -> None:
+        """Raise ``AbortError`` once this run's signal has tripped. Called from
+        the technique loops so a supervisor ABORT actually aborts (the worker
+        then emits ABORTED) instead of quietly returning partial results."""
+        if self.abort is not None:
+            self.abort.raise_if_aborted()
+
     @classmethod
     def from_sequence(
         cls,

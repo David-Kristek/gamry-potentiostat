@@ -38,7 +38,7 @@ def write_polarization_resistance_dta_file(
     fname: str,
     v_init: float,
     v_final: float,
-    scan_rate: float,
+    scan_rate_v_s: float,
     sample_time: float,
     area: float,
     density: float,
@@ -50,7 +50,9 @@ def write_polarization_resistance_dta_file(
     file_header = _to_explain_header(tkp.get_default_file_header(pstat, experiment_tag))
     file_header += f"VINIT\tPOTEN\t{v_init}\tT\tInitial E (V)\n"
     file_header += f"VFINAL\tPOTEN\t{v_final}\tT\tFinal E (V)\n"
-    file_header += f"SCANRATE\tQUANT\t{scan_rate}\tScan Rate (mV/s)\n"
+    # Header matches Gamry's own convention (and sequence_parser.py, which reads
+    # SCANRATE back as mV/s): the config value is V/s, so convert here.
+    file_header += f"SCANRATE\tQUANT\t{scan_rate_v_s * 1000.0}\tScan Rate (mV/s)\n"
     file_header += f"SAMPLETIME\tQUANT\t{sample_time}\tSample Period (s)\n"
     file_header += f"AREA\tQUANT\t{area}\tSample Area (cm^2)\n"
     file_header += f"DENSITY\tQUANT\t{density}\tDensity (g/cm^3)\n"

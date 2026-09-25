@@ -146,7 +146,6 @@ class CPP(Technique[CPPConfig]):
 
         signal = None
         curve_rev = None
-        stopped = False
 
         try:
             # Forward (anodic) leg: v_init -> v_apex.
@@ -159,9 +158,7 @@ class CPP(Technique[CPPConfig]):
             curve_fwd.run(True)
             while ctx.tkp.pstat_is_valid(ctx.pstat) and curve_fwd.running():
                 time.sleep(max(0.01, min(sample_time, 0.25)))
-                if ctx.abort:
-                    stopped = True
-                    break
+                ctx.raise_if_aborted()
                 ctx.emitter.emit_progress(curve_fwd.acq_data())
 
             raw_fwd = curve_fwd.acq_data()
@@ -171,26 +168,18 @@ class CPP(Technique[CPPConfig]):
             # Reverse (cathodic) leg: continue from wherever the forward leg
             # actually ended (v_apex, or an earlier current-triggered reversal)
             # down to v_final. The cell is never turned off between legs, so
-            # there's no open-circuit gap at the transition -- unless a stop was
-            # requested mid-forward-leg, in which case there's no point starting
-            # the reverse leg at all and the cell should come off right away
-            # instead of staying energized while it's written out.
-            if not stopped:
-                v_reversal = float(raw_fwd["vf"][-1]) if len(raw_fwd) else v_apex
-                curve_rev = ctx.tkp.RcvCurve(ctx.pstat, max_size_rev)
-                signal = ctx.pstat.signal_ramp_new(
-                    v_reversal, v_final, cfg.scan_rev_v_s, sample_time, ctx.tkp.PSTATMODE
-                )
-                ctx.pstat.set_signal_ramp(signal)
-                ctx.pstat.init_signal()
+            # there's no open-circuit gap at the transition.
+            v_reversal = float(raw_fwd["vf"][-1]) if len(raw_fwd) else v_apex
+            curve_rev = ctx.tkp.RcvCurve(ctx.pstat, max_size_rev)
+            signal = ctx.pstat.signal_ramp_new(v_reversal, v_final, cfg.scan_rev_v_s, sample_time, ctx.tkp.PSTATMODE)
+            ctx.pstat.set_signal_ramp(signal)
+            ctx.pstat.init_signal()
 
-                curve_rev.run(True)
-                while ctx.tkp.pstat_is_valid(ctx.pstat) and curve_rev.running():
-                    time.sleep(max(0.01, min(sample_time, 0.25)))
-                    if ctx.abort:
-                        stopped = True
-                        break
-                    ctx.emitter.emit_progress(_concat_leg_data(raw_fwd, curve_rev.acq_data(), sample_time))
+            curve_rev.run(True)
+            while ctx.tkp.pstat_is_valid(ctx.pstat) and curve_rev.running():
+                time.sleep(max(0.01, min(sample_time, 0.25)))
+                ctx.raise_if_aborted()
+                ctx.emitter.emit_progress(_concat_leg_data(raw_fwd, curve_rev.acq_data(), sample_time))
 
             if ctx.tkp.pstat_is_valid(ctx.pstat):
                 ctx.pstat.set_cell(False)
@@ -290,8 +279,7 @@ class CPP(Technique[CPPConfig]):
             curve.run(True)
             while ctx.tkp.pstat_is_valid(ctx.pstat) and curve.running():
                 time.sleep(max(0.01, min(sample_time, 0.25)))
-                if ctx.abort:
-                    break
+                ctx.raise_if_aborted()
                 ctx.emitter.emit_progress(curve.acq_data())
 
             if ctx.tkp.pstat_is_valid(ctx.pstat):
@@ -328,5 +316,5 @@ class CPP(Technique[CPPConfig]):
             legs = ["CURVE"] * len(data)
         return pd.DataFrame({"Potential_V": data["vf"], "Current_A": data["im"], "Leg": legs})
 
-    def _write_csv(self, path: str, result: TechniqueResult) -> None:
+    def write_csv(self, path: str, result: TechniqueResult) -> None:
         self.to_dataframe(result["data"], legs=result.get("legs")).to_csv(path, index=False)
