@@ -18,6 +18,7 @@ dependencies = [
     "numpy>=1.21",
     "pandas>=1.3",
     "matplotlib>=3.5",
+    "scipy>=1.7",
     "pydantic>=2.0,<2.6",
     # Backports TypedDict/ClassVar/Annotated/Literal on the Gamry 3.7 side
     # (stdlib typing only gained these in 3.8/3.9); pydantic already needs it
