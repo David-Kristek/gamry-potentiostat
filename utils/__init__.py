@@ -21,6 +21,7 @@ from potentiostat.utils.progress import (
     throttle,
 )
 from potentiostat.utils.technique_keys import base_technique, occurrence_keys
+from potentiostat.utils.eis_fitting import EISFitResult, fit_eis, fit_eis_csv, plot_eis_fit, read_eis_csv
 
 __all__ = [
     "AbortError",
@@ -37,9 +38,14 @@ __all__ = [
     "dump_workflow_event",
     "log_to_console",
     "parse_workflow_event",
+    "EISFitResult",
     "estimate_technique_duration",
+    "fit_eis",
+    "fit_eis_csv",
     "fraction_eta",
     "occurrence_keys",
+    "plot_eis_fit",
+    "read_eis_csv",
     "technique_keys",
     "throttle",
 ]

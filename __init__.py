@@ -27,6 +27,7 @@ from potentiostat.core.sequence.sequence import (
     execute_sequence,
     execute_sequence_sync,
 )
+from potentiostat.utils.eis_fitting import EISFitResult, fit_eis, fit_eis_csv, plot_eis_fit, read_eis_csv
 
 __all__ = [
     "SequenceConfig",
@@ -36,6 +37,11 @@ __all__ = [
     "CPPConfig",
     "ExecuteSequenceConfig",
     "SequenceResults",
+    "EISFitResult",
+    "fit_eis",
+    "fit_eis_csv",
+    "read_eis_csv",
+    "plot_eis_fit",
     "execute_sequence",
     "execute_sequence_sync",
 ]

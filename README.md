@@ -48,6 +48,25 @@ for key, outcome in results.items():
     print(key, outcome.csv_path)
 ```
 
+## Fit EIS equivalent circuits from CSV
+
+Host-side fitting is available for Randles and Randles-CPE circuits:
+
+```python
+from potentiostat import fit_eis_csv
+
+fit = fit_eis_csv("./run_output/eis.csv", circuit="randles", weighting="modulus")
+print(fit.parameters)  # {"Rs": ..., "Rct": ..., "Cdl": ...}
+fit.to_json("./run_output/eis_fit.json")
+```
+
+After a run, fit directly from the generated EIS CSV path:
+
+```python
+fit = fit_eis_csv(results["eis"].csv_path, circuit="randles-cpe", weighting="modulus")
+print(fit.rmse, fit.parameters)
+```
+
 ## Run directly under the Gamry Python
 
 Skip the subprocess if you are already on the Gamry 3.7 interpreter:
